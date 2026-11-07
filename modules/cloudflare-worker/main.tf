@@ -32,7 +32,7 @@ variable "bindings" {
     dataset_id  = optional(string)
   }))
   default     = {}
-  description = "Worker bindings (KV, R2, D1, Durable Objects, etc)."
+  description = "Binding map. This file adds a dynamic block for type kv, r2, or d1."
 }
 
 resource "cloudflare_worker_script" "this" {

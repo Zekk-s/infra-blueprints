@@ -1,42 +1,20 @@
-# AGENTS.md — infra-blueprints
+# AGENTS.md
 
-## Purpose
+## Repository
 
-Reusable Terraform modules. Small, composable, CI-validated.
+Three Terraform modules under `modules/` and one example under `examples/minimal-stack/`. Each module's variables, resource, and outputs are in `main.tf`. Each `variables.tf` is a comment. There is no root module and no module README.
 
-## Hard rules
+`examples/minimal-stack` calls `modules/cloudflare-worker` only. `worker.js` answers `/healthz` with `{"ok":true}` and returns 404 for every other path. The example does not call `modules/oracle-compute` or `modules/supabase-edge`.
 
-- **Never** commit state files (`*.tfstate*`).
-- **Never** bake credentials in code. Use env vars or OCI config.
-- **Never** widen a module's input surface without a documented reason in the PR description.
-- Pessimistic provider constraints only (`~>`). No floating `>=`.
-- Every module must pass `terraform validate` and `tflint`.
+`terraform validate` fails in `modules/cloudflare-worker` and `modules/oracle-compute`. The errors are listed in `README.md`. Leave the resources as they are unless the change is an intentional fix. Do not add resources so an old doc sentence becomes true. Docs should describe the files in the tree.
 
-## Workflow
+## Rules
 
-1. Branch from `main`: `git switch -c feat/<module>`.
-2. Add module under `modules/<name>/` with `main.tf`, `variables.tf`, `README.md`.
-3. Wire it into `examples/` if it's the first module of its kind.
-4. Run: `terraform fmt -recursive && terraform init -backend=false && terraform validate`.
-5. Open PR using `.github/PULL_REQUEST_TEMPLATE.md`.
+- Do not commit `*.tfstate*`, `.terraform/`, or credentials. `.gitignore` excludes state, `.terraform.lock.hcl`, and `*.tfvars`. Leave `.env.example` values as `replace_me`.
+- Provider version constraints in the modules use `~>`.
+- `.github/CODEOWNERS` is `* @Zekiog`.
+- README text, comments, commit messages, and pull request text stay in English and match this tree.
 
-## Code style
+## CI
 
-- One resource per module by default. Split only when complexity demands it.
-- All `variable` blocks have `type` + `description`.
-- `output` blocks for every externally useful attribute.
-- Use `locals` for derived values, not chained `var.x.y`.
-
-## Testing floor
-
-- CI runs `terraform fmt -check -recursive`, `terraform validate`, and `tflint --recursive`.
-- No live plan/apply in CI.
-
-## File ownership
-
-`.github/CODEOWNERS` routes every path to `@Zekiog`.
-
-## Things to avoid
-
-- Cross-module `variable` references — pass via `examples/` instead.
-- Provider configs inside modules — providers live at the root of each composition.
+`.github/workflows/ci.yml` runs on pull requests and on pushes to `main`. It installs Terraform 1.9.8 and, from the repo root, runs `terraform fmt -check -recursive`, `terraform init -backend=false`, and `terraform validate`. It then runs `tflint --init && tflint --recursive` with `continue-on-error: true`. The root has no `.tf` files, so that validate does not load `modules/` or `examples/`. The workflow does not plan or apply. `terraform fmt -check -recursive` currently fails on indentation in the three module `main.tf` files.

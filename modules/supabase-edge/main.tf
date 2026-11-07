@@ -15,7 +15,7 @@ variable "project_ref" {
 
 variable "edge_function_name" {
   type        = string
-  description = "Name of the Edge Function (must match directory under supabase/functions/)."
+  description = "Function name. Used in the deploy command and in function_dir."
 }
 
 variable "entrypoint_path" {
@@ -30,9 +30,7 @@ variable "verify_jwt" {
   description = "Require a valid JWT to invoke the function."
 }
 
-# Edge Functions are deployed via the Supabase CLI (`supabase functions deploy`),
-# not via the Terraform provider, but we model the function as a Terraform
-# resource so config stays declarative.
+# local-exec runs `supabase functions deploy`. No supabase_* resource is declared.
 
 locals {
   function_dir = "${var.entrypoint_path}/${var.edge_function_name}"
